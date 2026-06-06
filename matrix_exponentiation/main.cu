@@ -202,12 +202,19 @@ int main(int argc, char* argv[]) {
     float* h_C_gpu_naive = (float*)malloc(bytes);
     float* h_C_gpu_tiled = (float*)malloc(bytes);
 
-    // Initialize Matrix A with small random values in [0, 0.1] to prevent overflow during exponentiation
-    // Note: for power=100, if eigenvalues > 1, the matrix will overflow to infinity.
-    // Normalized matrix values ensure stability.
+    // Initialize Matrix A with random values scaled by N to ensure spectral radius is around 1.0,
+    // which prevents exponential explosion or decay to zero, making validation meaningful.
     srand(42);
-    for (int i = 0; i < N * N; ++i) {
-        h_A[i] = ((float)rand() / RAND_MAX) * 0.01f;
+    for (int i = 0; i < N; ++i) {
+        float row_sum = 0.0f;
+        for (int j = 0; j < N; ++j) {
+            h_A[i * N + j] = ((float)rand() / RAND_MAX);
+            row_sum += h_A[i * N + j];
+        }
+        // Normalize rows to sum to 1.0
+        for (int j = 0; j < N; ++j) {
+            h_A[i * N + j] /= row_sum;
+        }
     }
 
     // Device memory allocation
